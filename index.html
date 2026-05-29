@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="Mwamini complex services & Trading Portal - Trusted Global Supply Chain.">
+    <meta name="theme-color" content="#1e3a8a">
+    <title>Mwamini Complex Services & Trading Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <div id="dynamic-announcement" class="announcement-banner"></div>
+    <div id="global-toast" class="toast-ui">Notification Dispatched</div>
+
+    <header class="glass-panel">
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="https://sdxtdkroyolagmjaipgw.supabase.co/storage/v1/object/public/product-assets/Company%20logo.jpg" alt="Mwamini Logo" style="height: 42px; border-radius: 6px; filter: invert(1);">
+            <div class="brand-title">Mwamini Complex Services & Trading Portal</div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <div id="live-users-container" style="display: none;">
+                <span class="live-users-badge">
+                    <span class="live-users-pulse"></span>
+                    <span id="live-users-count">0</span> Online
+                </span>
+            </div>
+            <button id="theme-toggle" class="btn" style="background: var(--border-color); color: var(--text-main);">Theme</button>
+            
+            <div id="guest-nav" class="user-nav-group">
+                <button onclick="openAuthModal('login')" class="btn">Thank you for choosing us</button>
+                <button onclick="openAuthModal('register')" class="btn btn-primary">Together we can</button>
+            </div>
+            <div id="user-nav" class="user-nav-group" style="display:none;">
+                <span id="auth-user-name" style="font-weight:600; font-size:14px;"></span>
+                <button onclick="openUserDashboard()" class="btn btn-primary">My Account</button>
+                <button onclick="logoutUser()" class="btn" style="background:var(--danger); color:white;">Logout</button>
+            </div>
+            <button class="btn" style="background:transparent; border: 1px solid var(--border-color); color:var(--text-main);" onclick="openVerificationModal()">Admin</button>
+        </div>
+    </header>
+
+    <section style="background: var(--primary-gradient); color: white; padding: 4rem 5%; text-align: center; border-bottom: 4px solid var(--success);">
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem; font-weight: 800; letter-spacing: -1px;">Welcome to Mwamini Complex Services & Trading Portal</h1>
+        <p style="font-size: 1.15rem; opacity: 0.95; max-width: 800px; margin: 0 auto; line-height: 1.7;">
+            We are pleased to serve you with a carefully curated selection of high-quality products. Our commitment is to ensure every item meets strict standards of value and reliability. We aim to provide a smooth and satisfying experience that consistently exceeds expectations.
+        </p>
+    </section>
+
+    <section id="public-announcements-feed" style="padding: 2rem 5%; background: var(--bg-primary); display: none;">
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem; border-bottom: 2px solid var(--accent); padding-bottom: 0.5rem; display: inline-block;">Latest Updates</h3>
+        <div id="public-announcements-container"></div>
+    </section>
+
+    <section style="padding: 1rem 5%; text-align: center; border-bottom: 1px solid var(--border-color); font-size: 0.85rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px;">
+        Trusted Global Supply Chain &nbsp;&bull;&nbsp; we love you for life &nbsp;&bull;&nbsp; Secure Dispatch Verified
+    </section>
+
+    <div class="search-filter-bar">
+        <input type="text" id="search-input" class="search-input" style="flex:2;" placeholder="Search our delicious selection (e.g. Rice, Fertilizer)...">
+        <select id="category-filter" class="filter-select" style="flex:1;">
+            <option value="All">All Categories</option>
+            <option value="Agriculture">Agriculture</option>
+            <option value="Construction">Construction</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Food Materials">Food Materials</option>
+            <option value="Grain">Grain</option>
+            <option value="Services">Services</option>
+            <option value="Others">Others</option>
+        </select>
+        <select id="currency-select" class="filter-select" style="max-width: 150px;">
+            <option value="USD">US USD ($)</option>
+            <option value="RWF">RW RWF (Fr)</option>
+            <option value="RUB">RU RUB (₽)</option>
+        </select>
+    </div>
+
+    <main class="products-grid" id="products-container"></main>
+
+    <div class="modal" id="auth-modal">
+        <div class="modal-content">
+            <button type="button" class="close-modal-btn" onclick="closeAuthModal()">×</button>
+            <h2 id="auth-title" style="margin-bottom: 1.5rem; font-weight:800;">Sign In</h2>
+            <form id="auth-form">
+                <input type="hidden" id="auth-mode" value="login">
+                <div id="register-fields" style="display:none;">
+                    <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Full Name</label>
+                    <input type="text" id="reg-name" class="search-input" style="width:100%; margin-bottom: 1rem;">
+                    <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Phone Number (+250...)</label>
+                    <input type="text" id="reg-phone" class="search-input" style="width:100%; margin-bottom:0.25rem;" placeholder="+250780000000">
+                    <span id="phone-error" class="error-text" style="color:var(--danger); font-size:12px;"></span>
+                    <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Current Location</label>
+                    <input type="text" id="reg-location" class="search-input" style="width:100%; margin-bottom: 1rem;">
+                    <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Delivery Destination / Hub</label>
+                    <input type="text" id="reg-dest" class="search-input" style="width:100%; margin-bottom: 1rem;">
+                </div>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Email Address</label>
+                <input type="email" id="auth-email" class="search-input" style="width:100%; margin-bottom: 1rem;" required>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600; font-size:13px;">Password</label>
+                <input type="password" id="auth-password" class="search-input" style="width:100%; margin-bottom: 1.5rem;" required>
+                <button type="submit" id="auth-submit-btn" class="btn btn-primary" style="width: 100%;">Sign In</button>
+                <p style="text-align:center; margin-top: 1.25rem; font-size:14px; cursor:pointer; color:var(--accent); font-weight:600;" onclick="toggleAuthMode()">New Account or Member Login? Toggle Here</p>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="profile-completion-modal">
+        <div class="modal-content" style="text-align: center;">
+            <h2 style="margin-bottom: 1rem; font-weight:800;">Complete Your Profile</h2>
+            <p style="margin-bottom: 1.5rem; font-size: 14px; color: var(--text-muted);">Please upload a profile identity picture to continue and unlock full trading features.</p>
+            <form id="profile-completion-form">
+                <img id="avatar-preview" class="user-avatar-preview" src="https://via.placeholder.com/80" alt="Avatar" style="width:80px; height:80px; border-radius:50%; object-fit:cover; margin-bottom:1rem; border:2px solid var(--accent);">
+                <input type="file" id="avatar-upload" accept="image/*" class="search-input" style="width: 100%; margin-bottom: 1.5rem;" required>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Save & Continue Terminal</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="order-modal">
+        <div class="modal-content">
+            <button type="button" class="close-modal-btn" onclick="closeOrderModal()">×</button>
+            <h3 style="margin-bottom: 1.5rem; font-weight:800; padding-right: 2rem;" id="modal-product-title">Place Order Submission</h3>
+            <form id="order-submission-form">
+                <input type="hidden" id="form-product-id">
+                <input type="hidden" id="form-product-title-val">
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600;">Full Name</label>
+                <input type="text" id="cust-name" class="search-input" style="width: 100%; margin-bottom: 1rem;" required>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600;">Phone Number</label>
+                <input type="tel" id="cust-phone" class="search-input" style="width:100%; margin-bottom: 1rem;" required>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600;">Quantity Requested</label>
+                <input type="number" id="cust-qty" value="1" min="1" class="search-input" style="width:100%; margin-bottom: 1rem;" required>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600;">Delivery Destination / Hub</label>
+                <input type="text" id="cust-location" class="search-input" style="width:100%; margin-bottom: 1rem;" required>
+                <label style="display:block; margin: 0.5rem 0 0.25rem; font-weight:600;">Special Notes or Freight Requests</label>
+                <textarea id="cust-notes" class="search-input" style="width:100%; height:80px; margin-bottom: 1.5rem; resize:none;"></textarea>
+                <button type="submit" id="submit-order-btn" class="btn btn-primary" style="width: 100%;">Authorize & Transmit Order</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="verification-modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <button type="button" class="close-modal-btn" onclick="closeVerificationModal()">×</button>
+            <h2 style="margin-bottom: 1rem; color: var(--text-main); font-weight:800;">Admin Verification</h2>
+            <input type="password" id="verification-pin" class="search-input" style="width: 100%; text-align: center; font-size: 1.25rem; letter-spacing: 4px; margin-bottom: 1rem;" placeholder="••••">
+            <p id="verification-error" style="color: var(--danger); font-size: 13px; height: 18px; margin-bottom: 1rem; font-weight:600;"></p>
+            <button onclick="verifyAdminAccess()" class="btn btn-primary" style="width: 100%;">Verify Access</button>
+        </div>
+    </div>
+
+    <div id="lightbox-engine" class="lightbox-frame" onclick="dismissLightbox(event)">
+        <div class="lightbox-viewport">
+            <img id="lightbox-render" class="lightbox-img" src="" alt="Fidelity Preview" onmousedown="startImgDrag(event)" onmousemove="executeImgDrag(event)" onmouseup="stopImgDrag()" onmouseleave="stopImgDrag()">
+        </div>
+        <div class="lightbox-controls" onclick="event.stopPropagation()">
+            <button class="btn btn-primary" onclick="triggerLightboxZoom(1.25)">Zoom In</button>
+            <button class="btn btn-primary" onclick="triggerLightboxZoom(0.8)">Zoom Out</button>
+            <button class="btn" style="background:#475569; color:#fff;" onclick="resetLightboxTransform()">Reset</button>
+            <button class="btn" style="background:var(--success); color:#fff;" id="lightbox-dl-btn">Download Asset</button>
+            <button class="btn" style="background:var(--accent); color:#fff;" onclick="shareMediaAsset()">Share File</button>
+            <button class="btn" style="background:var(--danger); color:#fff;" onclick="closeLightboxEngine()">Exit Viewer</button>
+        </div>
+    </div>
+
+    <section class="feedback-section" style="padding: 4rem 5%; background: var(--bg-surface); border-top: 1px solid var(--border-color);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 4rem; max-width: 1200px; margin: 0 auto;">
+            <div class="feedback-col">
+                <h2 style="margin-bottom: 1rem; font-weight:800;">Share Your Experience</h2>
+                <form id="review-form">
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Your Name/Enterprise</label>
+                    <input type="text" id="review-name" class="search-input" style="width: 100%; margin-bottom: 1.5rem;" placeholder="e.g. Acme Logistics Corp" required>
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Service Dispatch Rating</label>
+                    <select id="review-rating" class="filter-select" style="width: 100%; margin-bottom: 1.5rem;" required>
+                        <option value="5">★★★★★ (5 Stars)</option>
+                        <option value="4">★★★★☆ (4 Stars)</option>
+                        <option value="3">★★★☆☆ (3 Stars)</option>
+                        <option value="2">★★☆☆☆ (2 Stars)</option>
+                        <option value="1">★☆☆☆☆ (1 Star)</option>
+                    </select>
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Verbatim Review Payload</label>
+                    <textarea id="review-message" class="search-input" style="width: 100%; height: 120px; margin-bottom: 2rem; resize: vertical;" placeholder="Detail your experience with our dispatch..." required></textarea>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Platform Review</button>
+                </form>
+            </div>
+            <div class="feedback-col">
+                <h2 style="margin-bottom: 1rem; font-weight:800;">Secure Support Routing</h2>
+                <form id="inquiry-form">
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Central Helpdesk Destination</label>
+                    <div style="width: 100%; padding: 0.85rem 1rem; background: rgba(100, 116, 139, 0.1); color: var(--text-muted); border: 1px dashed var(--border-color); border-radius: 8px; margin-bottom: 1.5rem; font-style: italic; font-size: 14px; font-weight:600;">Kigali Mainframe Route | Active</div>
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Inquiry Core Subject</label>
+                    <input type="text" id="inquiry-subject" class="search-input" style="width: 100%; margin-bottom: 1.5rem;" placeholder="e.g. Bulk Rice Logistics" required>
+                    <label style="display:block; margin-bottom: 0.5rem; font-weight:600; font-size: 14px;">Detailed Request Message</label>
+                    <textarea id="inquiry-message" class="search-input" style="width: 100%; height: 120px; margin-bottom: 2rem; resize: vertical;" placeholder="Outline container dimensions required..." required></textarea>
+                    <button type="submit" class="btn" style="width: 100%; background: var(--success); color: white;">Transmit Ticket to Helpdesk</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer" style="background: var(--bg-surface); padding: 4rem 5% 2rem 5%; border-top: 1px solid var(--border-color);">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 2.5rem; max-width:1200px; margin:0 auto;">
+            <div>
+                <h4 style="margin-bottom: 1rem; font-weight:800;">Mwamini Complex Services & Trading</h4>
+                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.6;">Leading the continent in reliable logistics, secure dispatch, and premium commodity distribution.</p>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 1rem; font-weight:800;">Quick Links</h4>
+                <ul style="list-style:none; line-height:2;">
+                    <li><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:14px;">Commodities Catalog</a></li>
+                    <li><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:14px;">Together we can</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 1rem; font-weight:800;">Support Channels</h4>
+                <ul style="list-style:none; line-height:2;">
+                    <li><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:14px;">Help Center Documentation</a></li>
+                    <li><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:14px;">Security Protocol</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 style="margin-bottom: 1rem; font-weight:800;">Contact Terminal</h4>
+                <ul style="list-style:none; color: var(--text-muted); font-size: 0.9rem; line-height: 1.8;">
+                    <li><strong>Base:</strong> Kigali, Rwanda</li>
+                    <li><strong>Comms:</strong> +250 785696336</li>
+                    <li><strong>Grid:</strong> soulaimanmwamini0@gmail.com</li>
+                </ul>
+            </div>
+        </div>
+        <div style="text-align:center; margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border-color); font-size:13px; color:var(--text-muted); font-weight:600;">
+            &copy; 2026 Mwamini Complex Services & Trading Portal Corporation. All Rights Reserved. we love you for life.
+        </div>
+    </footer>
+
+    <script src="supabase-config.js"></script>
+    <script>
+        // CLIENT ENVIRONMENT CONTROL VARIABLES
+        let localProductsCache = [];
+        let currentUser = null;
+        let currentUserProfile = null;
+        const exchangeRates = { USD: 1, RWF: 1290, RUB: 91.5 }; // Preserved absolute math conversions [cite: 2066]
+
+        // LIGHTBOX ZOOM STATE METRICS
+        let currentZoomScale = 1.0;
+        let isDraggingImg = false;
+        let startX = 0, startY = 0, moveX = 0, moveY = 0;
+
+        // FRONTEND SHIELD - SECURITY RATE LIMIT METRICS
+        const clickRateLimiter = {};
+
+        function checkRateLimit(actionName, thresholdMs = 1500) {
+            const now = Date.now();
+            if (clickRateLimiter[actionName] && (now - clickRateLimiter[actionName] < thresholdMs)) {
+                showToast("Rate limit anomaly prevented. Slow down inputs.");
+                return false;
+            }
+            clickRateLimiter[actionName] = now;
+            return true;
+        }
+
+        // XSS SECURE INPUT INJECTION GUARD
+        function cleanHTMLPayload(inputStr) {
+            if (!inputStr) return "";
+            const wrapper = document.createElement('p');
+            wrapper.textContent = inputStr;
+            return wrapper.innerHTML;
+        }
+
+        // ENTRY LIFECYCLE
+        document.addEventListener("DOMContentLoaded", async () => {
+            const root = document.documentElement;
+            
+            // Core Bootstrap Runs
+            initializePublicCatalog();
+            setupSearchFilters();
+            initializeFeedbackEngine();
+            fetchAnnouncements();
+            fetchSystemSettings();
+            await checkUserSession();
+
+            // Setup Theme Toggle
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                const activeTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                root.setAttribute('data-theme', activeTheme);
+            });
+
+            // Initialize Lightbox Mousewheel listeners
+            document.getElementById('lightbox-render').addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const d = e.deltaY < 0 ? 1.1 : 0.9;
+                triggerLightboxZoom(d);
+            });
+        });
+
+        // LOAD PUBLIC SYSTEM CONFIGS
+        async function fetchSystemSettings() {
+            if(!window.supabase) return;
+            const { data } = await window.supabase.from('system_settings').select('*').eq('setting_key', 'displayed_online_users').single();
+            if (data && data.setting_value > 0) {
+                document.getElementById('live-users-count').innerText = data.setting_value;
+                document.getElementById('live-users-container').style.display = 'inline-flex';
+            }
+        }
+
+        // SESSION AUTH TELEMETRY FLOW
+        async function checkUserSession() {
+            if(!window.supabase) return;
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                await loadUserProfile();
+            } else {
+                showGuestNav();
+            }
+        }
+
+        async function loadUserProfile() {
+            const { data } = await window.supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (data) {
+                currentUserProfile = data;
+                if (!data.avatar_url) {
+                    document.getElementById('profile-completion-modal').classList.add('active');
+                } else {
+                    showUserNav(data.full_name || currentUser.email);
+                }
+            }
+        }
+
+        function showGuestNav() {
+            document.getElementById('guest-nav').style.display = 'flex';
+            document.getElementById('user-nav').style.display = 'none';
+        }
+
+        function showUserNav(name) {
+            document.getElementById('guest-nav').style.display = 'none';
+            document.getElementById('user-nav').style.display = 'flex';
+            document.getElementById('auth-user-name').innerText = `Hello, ${cleanHTMLPayload(name)}`;
+        }
+
+        function openAuthModal(mode) {
+            document.getElementById('auth-mode').value = mode;
+            document.getElementById('auth-title').innerText = mode === 'login' ? 'Sign In' : 'Create Account';
+            document.getElementById('auth-submit-btn').innerText = mode === 'login' ? 'Sign In' : 'Register New Enterprise';
+            document.getElementById('register-fields').style.display = mode === 'login' ? 'none' : 'block';
+            document.getElementById('auth-modal').classList.add('active');
+        }
+
+        function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
+
+        function toggleAuthMode() {
+            const current = document.getElementById('auth-mode').value;
+            openAuthModal(current === 'login' ? 'register' : 'login');
+        }
+
+        // DISPATCH SIGNUP / LOGIN WORKFLOWS
+        document.getElementById("auth-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if(!checkRateLimit("auth_submit")) return;
+
+            const m = document.getElementById('auth-mode').value;
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const btn = document.getElementById('auth-submit-btn');
+
+            btn.disabled = true;
+            try {
+                if (m === 'register') {
+                    const phone = document.getElementById('reg-phone').value.trim();
+                    if(!/^\+2507[2389]\d{7}$/.test(phone)) {
+                        document.getElementById('phone-error').innerText = "Invalid Rwandan mobile number structure (+25078...)";
+                        btn.disabled = false;
+                        return;
+                    }
+                    document.getElementById('phone-error').innerText = "";
+
+                    const { data, error } = await window.supabase.auth.signUp({ email, password });
+                    if (error) throw error;
+                    
+                    if(data.user) {
+                        await window.supabase.from('profiles').update({
+                            full_name: document.getElementById('reg-name').value.trim(),
+                            phone: phone,
+                            location: document.getElementById('reg-location').value.trim(),
+                            delivery_destination: document.getElementById('reg-dest').value.trim()
+                        }).eq('id', data.user.id);
+                    }
+                    showToast("Registration Complete! Welcome to Mwamini.");
+                    closeAuthModal();
+                } else {
+                    const { error } = await window.supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    closeAuthModal();
+                    await checkUserSession();
+                    showToast("Access Granted. Session Authenticated.");
+                }
+            } catch (err) {
+                alert("Security Authorization Fault: " + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        function openUserDashboard() { window.location.href = 'dashboard.html'; }
+        async function logoutUser() {
+            await window.supabase.auth.signOut();
+            currentUser = null; currentUserProfile = null;
+            showGuestNav();
+            showToast("Session safely terminated.");
+        }
+
+        // RENDER CATLOG SELECTIONS
+        async function initializePublicCatalog() {
+            if(!window.supabase) return;
+            const { data } = await window.supabase.from('products').select('*').order('created_at', { ascending: false });
+            if(data) {
+                localProductsCache = data;
+                renderCatalogCards(data);
+            }
+        }
+
+        function renderCatalogCards(items) {
+            const container = document.getElementById('products-container');
+            const currency = document.getElementById('currency-select').value;
+            container.innerHTML = "";
+
+            if(items.length === 0) {
+                container.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:3rem; color:var(--text-muted); font-weight:600;">No commodities found matching current search boundaries.</div>`;
+                return;
+            }
+
+            items.forEach(p => {
+                const suffixIsRwf = p.description?.includes("[CURRENCY:RWF]");
+                let priceInUsd = suffixIsRwf ? (p.price / exchangeRates.RWF) : p.price;
+                let activePrice = priceInUsd * exchangeRates[currency];
+
+                const imgUrl = p.image_url ? p.image_url : "https://via.placeholder.com/300x220?text=No+Asset+Image";
+                
+                const card = document.createElement('div');
+                card.className = "product-card";
+                card.innerHTML = `
+                    <div class="product-media-container">
+                        <img src="${imgUrl}" class="product-media-img" alt="${cleanHTMLPayload(p.title)}">
+                        <div class="media-interactive-overlay">
+                            <div class="media-action-badge" onclick="event.stopPropagation(); launchLightboxEngine('${imgUrl}')">🔍</div>
+                        </div>
+                    </div>
+                    <div class="product-details-box">
+                        <div class="product-tag">${cleanHTMLPayload(p.category)}</div>
+                        <h3 style="margin-bottom:0.5rem; font-weight:700;">${cleanHTMLPayload(p.title)}</h3>
+                        <p style="font-size:13px; color:var(--text-muted); height:40px; overflow:hidden; margin-bottom:1rem;">${cleanHTMLPayload(p.description ? p.description.split('[CURRENCY')[0] : '')}</p>
+                        <div style="display:flex; justify-content:between; align-items:center;">
+                            <span style="font-size:1.2rem; font-weight:800; color:var(--primary);">${currency} ${activePrice.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
+                            <button class="btn btn-primary" style="padding:0.5rem 1rem; font-size:12px;" onclick="triggerOrderWorkflow('${p.id}', '${p.title.replace(/'/g, "\\'")}')">Order</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // SEARCH SEARCH METRICS
+        function setupSearchFilters() {
+            const run = () => {
+                const query = document.getElementById('search-input').value.toLowerCase().trim();
+                const cat = document.getElementById('category-filter').value;
+                const matches = localProductsCache.filter(p => {
+                    const mq = p.title.toLowerCase().includes(query) || (p.description || '').toLowerCase().includes(query);
+                    const mc = cat === 'All' || p.category === cat;
+                    return mq && mc;
+                });
+                renderCatalogCards(matches);
+            };
+            document.getElementById('search-input').addEventListener('input', run);
+            document.getElementById('category-filter').addEventListener('change', run);
+            document.getElementById('currency-select').addEventListener('change', () => renderCatalogCards(localProductsCache));
+        }
+
+        // ADVANCED LIGHTBOX SYSTEM ZOOM/PAN LOGIC ENGINE
+        function launchLightboxEngine(url) {
+            const frame = document.getElementById('lightbox-engine');
+            const img = document.getElementById('lightbox-render');
+            const dl = document.getElementById('lightbox-dl-btn');
+
+            img.src = url;
+            dl.onclick = () => {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mwamini-media-asset.jpg';
+                a.click();
+            };
+            currentZoomScale = 1.0;
+            moveX = 0; moveY = 0;
+            resetLightboxTransform();
+            frame.style.display = 'flex';
+        }
+
+        function closeLightboxEngine() { document.getElementById('lightbox-engine').style.display = 'none'; }
+        function dismissLightbox(e) { if(e.target.id === 'lightbox-engine') closeLightboxEngine(); }
+
+        function triggerLightboxZoom(factor) {
+            currentZoomScale = Math.max(0.5, Math.min(5.0, currentZoomScale * factor));
+            applyLightboxMatrix();
+        }
+
+        function resetLightboxTransform() {
+            currentZoomScale = 1.0; moveX = 0; moveY = 0;
+            applyLightboxMatrix();
+        }
+
+        function applyLightboxMatrix() {
+            const img = document.getElementById('lightbox-render');
+            img.style.transform = `translate(${moveX}px, ${moveY}px) scale(${currentZoomScale})`;
+        }
+
+        function startImgDrag(e) {
+            e.preventDefault();
+            isDraggingImg = true;
+            startX = e.clientX - moveX;
+            startY = e.clientY - moveY;
+            document.getElementById('lightbox-render').style.cursor = 'grabbing';
+        }
+
+        function executeImgDrag(e) {
+            if(!isDraggingImg) return;
+            moveX = e.clientX - startX;
+            moveY = e.clientY - startY;
+            applyLightboxMatrix();
+        }
+
+        function stopImgDrag() {
+            isDraggingImg = false;
+            document.getElementById('lightbox-render').style.cursor = 'grab';
+        }
+
+        function shareMediaAsset() {
+            const src = document.getElementById('lightbox-render').src;
+            if(navigator.share) {
+                navigator.share({ title: 'Mwamini Commodity Asset', text: 'Check out this product from Mwamini Trading', url: src });
+            } else {
+                navigator.clipboard.writeText(src);
+                showToast("Media resource link copied to clip memory.");
+            }
+        }
+
+        // TRANSACTION CONTROL ORDER FLOWS & GOOGLE SHEETS ASYNC QUEUING ENGINE
+        function triggerOrderWorkflow(id, title) {
+            if(!currentUser) {
+                openAuthModal('login');
+                showToast("Please authenticate access parameters before order placements.");
+                return;
+            }
+            document.getElementById('form-product-id').value = id;
+            document.getElementById('form-product-title-val').value = title;
+            document.getElementById('modal-product-title').innerText = `Place Order for: ${title}`;
+            
+            if(currentUserProfile) {
+                document.getElementById('cust-name').value = currentUserProfile.full_name || "";
+                document.getElementById('cust-phone').value = currentUserProfile.phone || "";
+                document.getElementById('cust-location').value = currentUserProfile.delivery_destination || "";
+            }
+            document.getElementById('order-modal').classList.add('active');
+        }
+
+        function closeOrderModal() { document.getElementById('order-modal').classList.remove('active'); }
+
+        document.getElementById("order-submission-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if(!checkRateLimit("order_submit")) return;
+
+            const btn = document.getElementById('submit-order-btn');
+            btn.disabled = true;
+
+            const pId = document.getElementById('form-product-id').value;
+            const pTitle = document.getElementById('form-product-title-val').value;
+            const qty = parseInt(document.getElementById('cust-qty').value);
+
+            const orderPayload = {
+                user_id: currentUser.id,
+                product_id: pId,
+                product_title: pTitle,
+                customer_name: document.getElementById('cust-name').value.trim(),
+                customer_phone: document.getElementById('cust-phone').value.trim(),
+                quantity: qty,
+                destination: document.getElementById('cust-location').value.trim(),
+                notes: document.getElementById('cust-notes').value.trim(),
+                status: 'Pending',
+                is_deleted: false,
+                created_at: new Date().toISOString()
+            };
+
+            try {
+                // 1. Core database transactional operations exactly as before [cite: 1398]
+                const { data: orderData, error: orderErr } = await window.supabase.from('orders').insert([orderPayload]).select().single();
+                if (orderErr) throw orderErr;
+
+                // 2. Realtime local inventory arithmetic adjustment safeguards [cite: 1550]
+                const productMatch = localProductsCache.find(x => x.id === pId);
+                if (productMatch) {
+                    const calculatedStock = Math.max(0, productMatch.quantity - qty);
+                    await window.supabase.from('products').update({ quantity: calculatedStock }).eq('id', pId);
+                }
+
+                showToast("Transaction Processed Successfully! Database secured.");
+                closeOrderModal();
+                e.target.reset();
+
+                // 3. SECURE ASYNC GOOGLE SHEETS TELEMETRY TRANSMISSION ENGINE [cite: 2063]
+                dispatchGoogleSheetsSync(orderData);
+
+            } catch (err) {
+                alert("Order Execution Disruption: " + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        // BACKGROUND QUEUE RETRY SUB-ENGINE FOR GOOGLE SHEETS SYNC
+        async function dispatchGoogleSheetsSync(orderRecord) {
+            const webhookUrl = "https://script.google.com/macros/s/AKfycbz_PRESERVED_FALLBACK_IF_NEEDED/exec"; // Inject target macro script deployment
+            
+            const payload = {
+                serial: orderRecord.id,
+                client: orderRecord.customer_name,
+                contact: orderRecord.customer_phone,
+                item: orderRecord.product_title,
+                volume: orderRecord.quantity,
+                hub: orderRecord.destination,
+                timestamp: orderRecord.created_at
+            };
+
+            // Capture initial request state into local tracking database queue
+            const { data: queueEntry } = await window.supabase.from('google_sheets_queue').insert([{
+                order_id: orderRecord.id.toString(),
+                payload: payload,
+                status: 'pending'
+            }]).select().single();
+
+            // Fire and forget transmission attempt so customer never blocks
+            fetch(webhookUrl, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(async () => {
+                // Operational Success
+                await window.supabase.from('google_sheets_queue').update({ status: 'processed' }).eq('id', queueEntry.id);
+                await window.supabase.from('orders').update({ sync_status: 'synced' }).eq('id', orderRecord.id);
+            }).catch(async (error) => {
+                // Network anomaly or timeout captured cleanly for systematic background worker sweep
+                await window.supabase.from('google_sheets_queue').update({ 
+                    status: 'failed', 
+                    attempts: 1, 
+                    error_log: error.message 
+                }).eq('id', queueEntry.id);
+            });
+        }
+
+        // FEEDBACK COMPONENT ENGINE LOGIC [cite: 2068]
+        function initializeFeedbackEngine() {
+            document.getElementById('review-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    name: document.getElementById('review-name').value.trim(),
+                    rating: parseInt(document.getElementById('review-rating').value),
+                    message: document.getElementById('review-message').value.trim()
+                };
+                const { error } = await window.supabase.from('reviews').insert([payload]);
+                if(!error) {
+                    showToast("Review payload successfully transmitted to wall.");
+                    e.target.reset();
+                }
+            });
+
+            document.getElementById('inquiry-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const payload = {
+                    subject: document.getElementById('inquiry-subject').value.trim(),
+                    message: document.getElementById('inquiry-message').value.trim()
+                };
+                const { error } = await window.supabase.from('inquiries').insert([payload]);
+                if(!error) {
+                    showToast("Support ticket successfully routed to helpdesk router.");
+                    e.target.reset();
+                }
+            });
+        }
+
+        async function fetchAnnouncements() {
+            if(!window.supabase) return;
+            const { data } = await window.supabase.from('announcements').select('*').eq('is_active', true);
+            if(data && data.length > 0) {
+                const container = document.getElementById('public-announcements-container');
+                container.innerHTML = "";
+                data.forEach(a => {
+                    container.innerHTML += `<div class="glass-panel" style="padding:1rem; border-radius:10px; margin-bottom:0.75rem; font-weight:600; font-size:14px;">⚡ ${cleanHTMLPayload(a.content)}</div>`;
+                });
+                document.getElementById('public-announcements-feed').style.display = 'block';
+            }
+        }
+
+        // ADMIN PIN AUTHENTICATION INTERRUPT [cite: 2000]
+        function openVerificationModal() { document.getElementById('verification-modal').classList.add('active'); }
+        function closeVerificationModal() { document.getElementById('verification-modal').classList.remove('active'); }
+        
+        function verifyAdminAccess() {
+            const input = document.getElementById('verification-pin');
+            const err = document.getElementById('verification-error');
+            // Preserved access code parameters precisely from operational matrix configuration [cite: 1997]
+            if (input.value === 'Password@4321') { 
+                window.location.href = 'admin.html';
+            } else {
+                err.innerText = "Security violation: Invalid authentication credential.";
+                input.value = "";
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById("global-toast");
+            t.innerText = msg;
+            t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3500);
+        }
+    </script>
+</body>
+</html>
