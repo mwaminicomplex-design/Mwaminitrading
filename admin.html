@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Command Control Hub | Mwamini Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        .admin-layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: #0f172a; color: #fff; padding: 2rem 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .sidebar .nav-tab { padding: 0.75rem 1.25rem; border-radius: 8px; color: #94a3b8; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .sidebar .nav-tab.active, .sidebar .nav-tab:hover { background: #1e293b; color: #fff; }
+        .admin-workspace { flex: 1; padding: 3rem 5%; background: var(--bg-primary); overflow-y: auto; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeInTab 0.3s ease; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-layout">
+        <div class="sidebar">
+            <div style="font-weight: 800; font-size: 1.15rem; margin-bottom: 2rem; color: var(--accent); padding: 0 1rem;">Mwamini Mainframe Console</div>
+            <div class="nav-tab active" onclick="toggleAdminTab('orders-view', this)">Live Active Orders</div>
+            <div class="nav-tab" onclick="toggleAdminTab('recycle-bin-view', this)">Recycle Bin Logs</div>
+            <div class="nav-tab" onclick="toggleAdminTab('inventory-view', this)">Inventory Stock Control</div>
+            <div class="nav-tab" onclick="toggleAdminTab('sync-queue-view', this)">Sheets Realtime Sync Sync</div>
+            <div class="nav-tab" style="color:var(--danger); margin-top:auto;" onclick="window.location.href='index.html'">Exit Mainframe Console</div>
+        </div>
+
+        <div class="admin-workspace">
+            
+            <section id="orders-view" class="tab-content active">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                    <div>
+                        <h2 style="font-weight:800;">Active Pipeline Orders Verification Log</h2>
+                        <p style="color:var(--text-muted); font-size:14px;">Real-time execution queue coordinates synchronized securely to local storage layers.</p>
+                    </div>
+                    <div style="display:flex; gap:1rem;">
+                        <button class="btn" style="background:var(--danger); color:#fff;" onclick="executeBulkSoftDeletion()">Bulk Move to Trash Bin</button>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:1.5rem; border-radius:12px; background:var(--bg-surface); margin-bottom:1.5rem; display:flex; gap:1rem; flex-wrap:wrap;">
+                    <input type="text" id="admin-order-search" class="search-input" style="flex:2;" placeholder="Filter orders globally by Name, item token or matching character vectors...">
+                    <select id="admin-order-filter-status" class="filter-select" style="flex:1;">
+                        <option value="All">All Pipelines States</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface);">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><input type="checkbox" id="select-all-orders-checkbox" onclick="toggleAllOrderCheckboxes(this)"></th>
+                                <th>Ref ID</th>
+                                <th>Client Name</th>
+                                <th>Commodity Item</th>
+                                <th>Volume</th>
+                                <th>Hub Destination</th>
+                                <th>Fulfillment Pipeline Status Action Modifier</th>
+                                <th>System Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-active-orders-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="recycle-bin-view" class="tab-content">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                    <div>
+                        <h2 style="font-weight:800; color:var(--danger);">Recycle Bin Records Repository</h2>
+                        <p style="color:var(--text-muted); font-size:14px;">Soft-deleted transaction entities retained for data preservation validation loops.</p>
+                    </div>
+                    <div style="display:flex; gap:1rem;">
+                        <button class="btn" style="background:var(--success); color:#fff;" onclick="executeBulkRestoration()">Bulk Restore Entities</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface);">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40px;"><input type="checkbox" id="select-all-trash-checkbox" onclick="toggleAllTrashCheckboxes(this)"></th>
+                                <th>Ref ID</th>
+                                <th>Client Name</th>
+                                <th>Commodity Item</th>
+                                <th>Volume</th>
+                                <th>Deleted Timestamp</th>
+                                <th>System Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-trash-orders-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="inventory-view" class="tab-content">
+                <h2 style="font-weight:800; margin-bottom:1.5rem;">Inventory Control Matrix Manager</h2>
+                
+                <div style="background:var(--bg-surface); padding:2rem; border-radius:16px; border:1px solid var(--border-color); margin-bottom:2.5rem;">
+                    <form id="sku-management-form" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:1.25rem;">
+                        <input type="hidden" id="sku-id">
+                        <div><label style="font-weight:600; font-size:13px;">Title</label><input type="text" id="sku-title" class="search-input" style="width:100%" required></div>
+                        <div><label style="font-weight:600; font-size:13px;">Category</label>
+                            <select id="sku-category" class="filter-select" style="width:100%">
+                                <option value="Agriculture">Agriculture</option>
+                                <option value="Construction">Construction</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Food Materials">Food Materials</option>
+                                <option value="Grain">Grain</option>
+                                <option value="Services">Services</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div><label style="font-weight:600; font-size:13px;">Price Value</label><input type="number" id="sku-price" step="0.01" class="search-input" style="width:100%" required></div>
+                        <div><label style="font-weight:600; font-size:13px;">Currency Binding</label><select id="sku-currency-type" class="filter-select" style="width:100%"><option value="USD">USD</option><option value="RWF">RWF</option></select></div>
+                        <div><label style="font-weight:600; font-size:13px;">Stock Quantity</label><input type="number" id="sku-qty" class="search-input" style="width:100%" required></div>
+                        <div><label style="font-weight:600; font-size:13px;">Public Status</label><select id="sku-status" class="filter-select" style="width:100%"><option value="Available">Available</option><option value="Limited stock">Limited stock</option><option value="Out of stock">Out of stock</option></select></div>
+                        <div style="grid-column:1/-1;"><label style="font-weight:600; font-size:13px;">Description</label><textarea id="sku-desc" class="search-input" style="width:100%; height:70px; resize:none;"></textarea></div>
+                        <div style="grid-column:1/-1;"><label style="font-weight:600; font-size:13px;">Asset Image Target URL</label><input type="text" id="sku-image-url-text" class="search-input" style="width:100%;" placeholder="https://external-resource-link.com/image.jpg"></div>
+                        <button type="submit" id="sku-save-btn" class="btn btn-primary" style="grid-column:1; margin-top:0.5rem;">Save Product Record</button>
+                    </form>
+                </div>
+
+                <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface);">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Asset Image</th>
+                                <th>Title Name</th>
+                                <th>Category Binding</th>
+                                <th>Price Matrix</th>
+                                <th>Stock Reserves</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sku-table-body-rows"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="sync-queue-view" class="tab-content">
+                <h2 style="font-weight:800; margin-bottom:0.5rem;">Google Sheets Automation Telemetry Realtime Sync Queue</h2>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:2rem;">Verifies backup data synchronizations are operational without data losses.</p>
+                
+                <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-surface);">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Queue ID</th>
+                                <th>Associated Order Entity ID</th>
+                                <th>Attempts</th>
+                                <th>Current State Status</th>
+                                <th>Log Details Fault Diagnostics</th>
+                                <th>Action Reset</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sync-queue-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <div class="modal" id="admin-confirm-modal">
+        <div class="modal-content" style="max-width:420px; text-align:center;">
+            <h3 style="font-weight:800; margin-bottom:1rem;" id="confirm-modal-title">Verify Action Command</h3>
+            <p style="font-size:14px; color:var(--text-muted); margin-bottom:2rem;" id="confirm-modal-desc">Are you completely certain you intend to execute this action?</p>
+            <div style="display:flex; gap:1rem; justify-content:center;">
+                <button class="btn" style="background:var(--border-color); color:var(--text-main);" onclick="dismissAdminModalConfirmation()">Cancel</button>
+                <button class="btn" style="background:var(--danger); color:#fff;" id="confirm-modal-action-execution-btn">Authorize Override</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-toast" class="toast-ui">Notification Dispatched</div>
+
+    <script src="supabase-config.js"></script>
+    <script>
+        let cachedOrdersArray = [];
+        let cachedProductsArray = [];
+        let operationalConfirmationCallback = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if(!window.supabase) return;
+            
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if(!session) {
+                window.location.replace("index.html");
+                return;
+            }
+
+            // Fire core data synchronizer loops
+            loadAdminOrdersMatrix();
+            loadAdminInventoryMatrix();
+            loadAdminSyncQueueMatrix();
+            setupOrdersGridFilters();
+        });
+
+        function toggleAdminTab(targetId, element) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
+            document.getElementById(targetId).classList.add('active');
+            element.classList.add('active');
+        }
+
+        // CONTROL BLOCK FOR ORDER FILTERS & SOFT-DELETE DATA ARCHITECTURES
+        async function loadAdminOrdersMatrix() {
+            const { data, error } = await window.supabase.from('orders').select('*').order('created_at', { ascending: false });
+            if(data) {
+                cachedOrdersArray = data;
+                renderActiveOrdersTableGrid(data.filter(x => x.is_deleted === false));
+                renderTrashBinOrdersTableGrid(data.filter(x => x.is_deleted === true));
+            }
+        }
+
+        function renderActiveOrdersTableGrid(rows) {
+            const tbody = document.getElementById('admin-active-orders-table-body');
+            tbody.innerHTML = "";
+
+            if(rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No active rows current matching search criteria.</td></tr>`;
+                return;
+            }
+
+            rows.forEach(o => {
+                const checkedString = o.status;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="checkbox" class="order-row-checkbox-node" data-id="${o.id}"></td>
+                        <td style="font-family:monospace; font-size:12px; font-weight:700;">#${o.id.substring(0,8).toUpperCase()}</td>
+                        <td><strong>${o.customer_name}</strong><br><span style="font-size:11px; color:var(--text-muted);">${o.customer_phone}</span></td>
+                        <td>${o.product_title}</td>
+                        <td><strong>${o.quantity}</strong></td>
+                        <td>${o.destination}</td>
+                        <td>
+                            <select class="filter-select" style="padding:4px 8px; font-size:12px;" onchange="updatePipelineStatus('${o.id}', this.value)">
+                                <option value="Pending" ${checkedString === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="Processing" ${checkedString === 'Processing' ? 'selected' : ''}>Processing</option>
+                                <option value="Shipped" ${checkedString === 'Shipped' ? 'selected' : ''}>Shipped</option>
+                                <option value="Delivered" ${checkedString === 'Delivered' ? 'selected' : ''}>Delivered</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button class="btn" style="background:var(--danger); color:#fff; padding:4px 10px; font-size:11px;" onclick="triggerSoftDeleteModalInterception('${o.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderTrashBinOrdersTableGrid(rows) {
+            const tbody = document.getElementById('admin-trash-orders-table-body');
+            tbody.innerHTML = "";
+
+            if(rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Recycle bin is empty. Database clean.</td></tr>`;
+                return;
+            }
+
+            rows.forEach(o => {
+                const ts = o.deleted_at ? new Date(o.deleted_at).toLocaleString() : "Recently";
+                tbody.innerHTML += `
+                    <tr>
+                        <td><input type="checkbox" class="trash-row-checkbox-node" data-id="${o.id}"></td>
+                        <td style="font-family:monospace; font-size:12px;">#${o.id.substring(0,8).toUpperCase()}</td>
+                        <td>${o.customer_name}</td>
+                        <td>${o.product_title}</td>
+                        <td>${o.quantity}</td>
+                        <td style="color:var(--text-muted); font-size:12px;">${ts}</td>
+                        <td>
+                            <button class="btn" style="background:var(--success); color:#fff; padding:4px 10px; font-size:11px;" onclick="restoreOrderEntitySingle('${o.id}')">Restore</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // SETUP ORDERS TABLE LOGS FILTERS
+        function setupOrdersGridFilters() {
+            const run = () => {
+                const q = document.getElementById('admin-order-search').value.toLowerCase().trim();
+                const st = document.getElementById('admin-order-filter-status').value;
+                const filtered = cachedOrdersArray.filter(x => x.is_deleted === false).filter(o => {
+                    const mq = o.customer_name.toLowerCase().includes(q) || o.product_title.toLowerCase().includes(q) || o.id.toLowerCase().includes(q);
+                    const ms = st === 'All' || o.status === st;
+                    return mq && ms;
+                });
+                renderActiveOrdersTableGrid(filtered);
+            };
+            document.getElementById('admin-order-search').addEventListener('input', run);
+            document.getElementById('admin-order-filter-status').addEventListener('change', run);
+        }
+
+        // UPDATE PIPELINE STATUS IN SUPABASE
+        async function updatePipelineStatus(id, value) {
+            const { error } = await window.supabase.from('orders').update({ status: value }).eq('id', id);
+            if(!error) {
+                showToast(`Order status updated to ${value}`);
+                // Insert audit trail entry
+                logAdminOperationAction("Status Update Change Triggered", "orders", id, { status: value });
+            }
+        }
+
+        // SOFT DELETE INTERCEPTIONS LOGIC MODALS
+        function triggerSoftDeleteModalInterception(id) {
+            document.getElementById('confirm-modal-title').innerText = "Confirm Order Deletion";
+            document.getElementById('confirm-modal-desc').innerText = "Are you completely certain you wish to move this order to the soft-delete recycle bin repository layer?";
+            
+            operationalConfirmationCallback = async () => {
+                const { error } = await window.supabase.from('orders').update({ 
+                    is_deleted: true, 
+                    deleted_at: new Date().toISOString() 
+                }).eq('id', id);
+                if(!error) {
+                    showToast("Transaction relocated to Recycle Bin logs.");
+                    logAdminOperationAction("Soft Delete Command Executed", "orders", id, {});
+                    loadAdminOrdersMatrix();
+                }
+                dismissAdminModalConfirmation();
+            };
+            document.getElementById('admin-confirm-modal').classList.add('active');
+        }
+
+        async function restoreOrderEntitySingle(id) {
+            const { error } = await window.supabase.from('orders').update({ 
+                is_deleted: false, 
+                deleted_at: null 
+            }).eq('id', id);
+            if(!error) {
+                showToast("Order transaction context restored to active maps.");
+                logAdminOperationAction("Restoration Sweep Fired", "orders", id, {});
+                loadAdminOrdersMatrix();
+            }
+        }
+
+        // BULK SELECTION ENGINE WRAPPERS
+        function toggleAllOrderCheckboxes(master) {
+            document.querySelectorAll('.order-row-checkbox-node').forEach(c => c.checked = master.checked);
+        }
+        function toggleAllTrashCheckboxes(master) {
+            document.querySelectorAll('.trash-row-checkbox-node').forEach(c => c.checked = master.checked);
+        }
+
+        async function executeBulkSoftDeletion() {
+            const selectedIds = Array.from(document.querySelectorAll('.order-row-checkbox-node:checked')).map(c => c.getAttribute('data-id'));
+            if(selectedIds.length === 0) return;
+
+            if(confirm(`Move all ${selectedIds.length} checked rows to recycle bin safely?`)) {
+                const { error } = await window.supabase.from('orders').update({
+                    is_deleted: true,
+                    deleted_at: new Date().toISOString()
+                }).in('id', selectedIds);
+                if(!error) {
+                    showToast("Bulk operations successfully executed across inventory items.");
+                    logAdminOperationAction("Bulk Soft Delete Sweep", "orders", "Multiple", { count: selectedIds.length });
+                    loadAdminOrdersMatrix();
+                }
+            }
+        }
+
+        async function executeBulkRestoration() {
+            const selectedIds = Array.from(document.querySelectorAll('.trash-row-checkbox-node:checked')).map(c => c.getAttribute('data-id'));
+            if(selectedIds.length === 0) return;
+
+            const { error } = await window.supabase.from('orders').update({
+                is_deleted: false,
+                deleted_at: null
+            }).in('id', selectedIds);
+            if(!error) {
+                showToast("Bulk records successfully restored to operational matrix dashboards.");
+                logAdminOperationAction("Bulk Restore Operational Command", "orders", "Multiple", { count: selectedIds.length });
+                loadAdminOrdersMatrix();
+            }
+        }
+
+        function dismissAdminModalConfirmation() {
+            document.getElementById('admin-confirm-modal').classList.remove('active');
+            operationalConfirmationCallback = null;
+        }
+
+        document.getElementById('confirm-modal-action-execution-btn').addEventListener('click', () => {
+            if(operationalConfirmationCallback) operationalConfirmationCallback();
+        });
+
+        // AUDIT TRAIL DATA EMITTERS
+        async function logAdminOperationAction(action, targetType, targetId, detailsJson) {
+            const { data: { session } } = await window.supabase.auth.getSession();
+            const userEmail = session ? session.user.email : "Unknown Superuser Admin Context";
+            await window.supabase.from('admin_audit_logs').insert([{
+                admin_email: userEmail,
+                action: action,
+                target_type: targetType,
+                target_id: targetId,
+                details: detailsJson
+            }]);
+        }
+
+        // UNTOUCHED CORE INVENTORY SYSTEM LOGIC OVERLAYS [cite: 1524, 1547]
+        async function loadAdminInventoryMatrix() {
+            const { data } = await window.supabase.from('products').select('*').order('created_at', { ascending: false });
+            if(data) {
+                cachedProductsArray = data;
+                const tbody = document.getElementById('sku-table-body-rows');
+                tbody.innerHTML = "";
+
+                data.forEach(p => {
+                    const priceFormatted = p.description?.includes("[CURRENCY:RWF]") ? `${p.price.toLocaleString()} RWF` : `$${p.price.toLocaleString()}`;
+                    const thumb = p.image_url ? p.image_url : "https://via.placeholder.com/45";
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><img src="${thumb}" style="width:45px; height:45px; object-fit:cover; border-radius:6px;"></td>
+                            <td><strong>${p.title}</strong></td>
+                            <td><span class="badge" style="background:#cbd5e1; color:#0f172a; padding:2px 6px; border-radius:4px; font-size:12px;">${p.category}</span></td>
+                            <td><strong>${priceFormatted}</strong></td>
+                            <td><span style="color:${p.quantity <= 3 ? 'var(--danger)' : 'inherit'}; font-weight:700;">${p.quantity} Units</span></td>
+                            <td><button class="btn" style="padding:2px 8px; font-size:12px; background:var(--accent); color:#fff;" onclick="editSkuFormBindings('${p.id}')">Edit</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        document.getElementById('sku-management-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('sku-id').value;
+            const payload = {
+                title: document.getElementById('sku-title').value.trim(),
+                category: document.getElementById('sku-category').value,
+                price: parseFloat(document.getElementById('sku-price').value),
+                quantity: parseInt(document.getElementById('sku-qty').value),
+                status: document.getElementById('sku-status').value,
+                description: `${document.getElementById('sku-desc').value.trim()} [CURRENCY:${document.getElementById('sku-currency-type').value}]`,
+                image_url: document.getElementById('sku-image-url-text').value.trim() || null
+            };
+
+            let err = null;
+            if(id) {
+                const { error } = await window.supabase.from('products').update(payload).eq('id', id);
+                err = error;
+            } else {
+                const { error } = await window.supabase.from('products').insert([payload]);
+                err = error;
+            }
+
+            if(!err) {
+                showToast("Product portfolio matrix updated successfully.");
+                e.target.reset();
+                document.getElementById('sku-id').value = "";
+                loadAdminInventoryMatrix();
+            } else {
+                alert("Database Fault: " + err.message);
+            }
+        });
+
+        function editSkuFormBindings(id) {
+            const p = cachedProductsArray.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById('sku-id').value = p.id;
+            document.getElementById('sku-title').value = p.title;
+            document.getElementById('sku-category').value = p.category;
+            document.getElementById('sku-price').value = p.price;
+            document.getElementById('sku-qty').value = p.quantity;
+            document.getElementById('sku-status').value = p.status;
+            document.getElementById('sku-desc').value = p.description ? p.description.split(' [CURRENCY')[0] : "";
+            document.getElementById('sku-image-url-text').value = p.image_url || "";
+        }
+
+        // LOAD SECURE SHEETS SYNC TELEMETRY VIEW LOGS
+        async function loadAdminSyncQueueMatrix() {
+            const { data } = await window.supabase.from('google_sheets_queue').select('*').order('created_at', { ascending: false }).limit(50);
+            if(data) {
+                const tbody = document.getElementById('sync-queue-table-body');
+                tbody.innerHTML = "";
+                data.forEach(q => {
+                    const statusColor = q.status === 'processed' ? 'var(--success)' : 'var(--warning)';
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-family:monospace; font-size:11px;">${q.id}</td>
+                            <td style="font-family:monospace; font-size:11px;">#${q.order_id.substring(0,8).toUpperCase()}</td>
+                            <td><strong>${q.attempts}</strong></td>
+                            <td><span style="color:${statusColor}; font-weight:800; text-transform:uppercase;">${q.status}</span></td>
+                            <td style="font-size:12px; color:var(--text-muted); max-width:250px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${q.error_log || 'None - Active Sync Pipeline'}</td>
+                            <td><button class="btn" style="padding:2px 6px; font-size:11px; background:var(--border-color); color:var(--text-main);" onclick="reQueueSheetsSyncItem('${q.id}')">Retry</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        async function reQueueSheetsSyncItem(id) {
+            const { error } = await window.supabase.from('google_sheets_queue').update({ status: 'pending', attempts: 0 }).eq('id', id);
+            if(!error) {
+                showToast("Item successfully re-queued for transmission sweep cycles.");
+                loadAdminSyncQueueMatrix();
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById("global-toast"); t.innerText = msg; t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3000);
+        }
+    </script>
+</body>
+</html>
