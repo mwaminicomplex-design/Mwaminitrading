@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Core Control Mainframe | Mwamini</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="background: var(--bg-primary);">
+
+    <header class="glass-panel">
+        <div style="display: flex; align-items: center; gap: 10px;" onclick="window.location.href='index.html'">
+            <div class="brand-title" style="cursor:pointer;">← Return to Trading Hub</div>
+        </div>
+        <h2 style="font-weight: 800; font-size: 1.15rem;">User Control Dashboard Terminal</h2>
+    </header>
+
+    <main style="padding: 3rem 5%; max-width: 1400px; margin: 0 auto;">
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 3rem; flex-wrap: wrap;">
+            
+            <div style="display:flex; flex-direction:column; gap:2rem;">
+                <div class="glass-panel" style="padding: 2rem; border-radius: 20px; text-align: center; background:var(--bg-surface);">
+                    <h3 style="margin-bottom: 1.5rem; font-weight:800;">Enterprise Identity Profile</h3>
+                    <img id="dash-avatar" src="https://via.placeholder.com/100" alt="Profile" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin:0 auto 1.5rem auto; border:3px solid var(--accent); display:block;">
+                    
+                    <div style="text-align: left; background: var(--bg-primary); padding: 1.25rem; border-radius: 12px; margin-bottom: 1.5rem; font-size:14px; line-height:2;">
+                        <p><strong>Corporate Name:</strong> <span id="dash-name" style="color:var(--text-muted);"></span></p>
+                        <p><strong>Routing Mail:</strong> <span id="dash-email" style="color:var(--text-muted);"></span></p>
+                        <p><strong>Comms Link:</strong> <span id="dash-phone" style="color:var(--text-muted);"></span></p>
+                        <p><strong>Destination Hub:</strong> <span id="dash-dest" style="color:var(--text-muted);"></span></p>
+                    </div>
+
+                    <form id="avatar-update-form" style="display:flex; flex-direction:column; gap:0.5rem;">
+                        <input type="file" id="avatar-file-input" accept="image/*" class="search-input" style="font-size:12px;" required>
+                        <button type="submit" class="btn btn-primary" style="width:100%; padding:0.5rem;">Re-upload Profile Identity</button>
+                    </form>
+                </div>
+
+                <div class="glass-panel" style="padding:1.5rem; border-radius:16px; background:var(--primary-gradient); color:#fff;">
+                    <h4 style="font-weight:800; margin-bottom:0.5rem;">Premium Global Telemetry Activated</h4>
+                    <p style="font-size:13px; opacity:0.9; line-height:1.5;">Your supply chain vectors, pipeline movements, and Google Sheets replication runs are encrypted and live.</p>
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:2.5rem;">
+                
+                <div class="glass-panel" style="padding: 2rem; border-radius: 20px; background:var(--bg-surface);">
+                    <h3 style="margin-bottom: 1rem; font-weight:800;">My Order History & Live Tracking</h3>
+                    
+                    <div id="live-pipeline-wrapper" style="display:none; background:var(--bg-primary); padding:1.5rem; border-radius:12px; margin-bottom:1.5rem;">
+                        <div style="font-weight:700; font-size:13px; margin-bottom:0.5rem;" id="pipeline-title">Tracking Order Vector: #...</div>
+                        <div class="pipeline-track">
+                            <div class="pipeline-line"></div>
+                            <div class="pipeline-progress" id="pipeline-progress-bar"></div>
+                            <div class="pipeline-node" id="step-Pending">P</div>
+                            <div class="pipeline-node" id="step-Processing">PR</div>
+                            <div class="pipeline-node" id="step-Shipped">S</div>
+                            <div class="pipeline-node" id="step-Delivered">D</div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); font-weight:700;">
+                            <span>PENDING</span><span>PROCESSING</span><span>SHIPPED</span><span>DELIVERED</span>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x:auto; border-radius:12px; border:1px solid var(--border-color);">
+                        <table class="dashboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Ref ID</th>
+                                    <th>Commodity</th>
+                                    <th>Volume</th>
+                                    <th>Timestamp</th>
+                                    <th>Fulfillment State</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-orders-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="glass-panel" style="padding:2rem; border-radius:20px; background:var(--bg-surface);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+                        <div>
+                            <h3 style="font-weight:800;">Mwamini Customer Forum & Live Community Chat</h3>
+                            <p style="font-size:13px; color:var(--text-muted);">Real-time discussions and verified supplier synchronization network.</p>
+                        </div>
+                    </div>
+
+                    <div class="community-chat-panel">
+                        <div class="chat-messages-stream" id="chat-messages-container"></div>
+                        <form id="chat-entry-form" class="chat-input-row">
+                            <input type="text" id="chat-message-input" class="search-input" style="flex:1;" placeholder="Type your message to the community wall safely..." required maxLength="600">
+                            <button type="submit" class="btn btn-primary">Transmit Broadcast</button>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="global-toast" class="toast-ui">Notification Dispatched</div>
+
+    <script src="supabase-config.js"></script>
+    <script>
+        let sessionUser = null;
+        let localProfileRecord = null;
+        let globalOrdersCache = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if(!window.supabase) return;
+            
+            const { data: { session } } = await window.supabase.auth.getSession();
+            if(!session) {
+                window.location.replace("index.html");
+                return;
+            }
+            sessionUser = session.user;
+            
+            await fetchDashboardProfile();
+            await fetchUserOrdersHistory();
+            initializeRealtimeChatStream();
+        });
+
+        async function fetchDashboardProfile() {
+            const { data } = await window.supabase.from('profiles').select('*').eq('id', sessionUser.id).single();
+            if(data) {
+                localProfileRecord = data;
+                document.getElementById('dash-name').innerText = data.full_name || "Enterprise Client";
+                document.getElementById('dash-email').innerText = sessionUser.email;
+                document.getElementById('dash-phone').innerText = data.phone || "N/A";
+                document.getElementById('dash-dest').innerText = data.delivery_destination || "N/A";
+                if(data.avatar_url) {
+                    document.getElementById('dash-avatar').src = data.avatar_url;
+                }
+            }
+        }
+
+        // AVATAR FILE UPLOAD SECURITY MANAGEMENT FLOW [cite: 1369]
+        document.getElementById('avatar-update-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('avatar-file-input');
+            if(input.files.length === 0) return;
+
+            const file = input.files[0];
+            const ext = file.name.split('.').pop().toLowerCase();
+            const securityMimeWhiteList = ['image/jpeg', 'image/png', 'image/webp'];
+
+            // Security Validation Shields [cite: 1935]
+            if(!securityMimeWhiteList.includes(file.type)) {
+                alert("Security block: Upload configuration format violation.");
+                return;
+            }
+
+            const path = `${sessionUser.id}-${Date.now()}.${ext}`;
+            try {
+                const { error: uploadErr } = await window.supabase.storage.from('avatars').upload(path, file);
+                if(uploadErr) throw uploadErr;
+
+                const { data: { publicUrl } } = window.supabase.storage.from('avatars').getPublicUrl(path);
+                
+                await window.supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', sessionUser.id);
+                document.getElementById('dash-avatar').src = publicUrl;
+                showToast("Identity file matrix successfully updated.");
+            } catch(err) {
+                alert("Storage upload error: " + err.message);
+            }
+        });
+
+        // LOAD ORDERS GRID RECORDS [cite: 1387]
+        async function fetchUserOrdersHistory() {
+            const { data } = await window.supabase.from('orders').select('*').eq('user_id', sessionUser.id).eq('is_deleted', false).order('created_at', { ascending: false });
+            if(data) {
+                globalOrdersCache = data;
+                const tbody = document.getElementById('user-orders-table-body');
+                tbody.innerHTML = "";
+
+                if(data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--text-muted);">No recorded order coordinates found under this signature.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(o => {
+                    const ts = new Date(o.created_at).toLocaleDateString();
+                    const refCode = o.id.substring(0, 8).toUpperCase();
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="font-family:monospace; font-weight:700;">#${refCode}</td>
+                            <td>${o.product_title}</td>
+                            <td>${o.quantity}</td>
+                            <td>${ts}</td>
+                            <td><span style="font-weight:700; color:var(--accent);">${o.status}</span></td>
+                            <td><button class="btn" style="padding:4px 10px; font-size:11px; background:var(--primary); color:#fff;" onclick="launchPipelineTracking('${o.id}')">Track</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        // LIVE COMPONENT PIPELINE TELEMETRY LOADER [cite: 1628]
+        function launchPipelineTracking(orderId) {
+            const matched = globalOrdersCache.find(x => x.id === orderId);
+            if(!matched) return;
+
+            document.getElementById('pipeline-title').innerText = `Tracking Order Vector: #${matched.id.substring(0,8).toUpperCase()} (${matched.product_title})`;
+            document.getElementById('live-pipeline-wrapper').style.display = 'block';
+
+            // Reset pipelines layout classes cleanly [cite: 1647]
+            const nodes = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+            nodes.forEach(n => {
+                document.getElementById(`step-${n}`).className = "pipeline-node";
+            });
+
+            const state = matched.status;
+            const bar = document.getElementById('pipeline-progress-bar');
+
+            if (state === 'Pending') {
+                document.getElementById('step-Pending').classList.add('active');
+                bar.style.width = '0%';
+            } else if (state === 'Processing') {
+                document.getElementById('step-Pending').classList.add('completed');
+                document.getElementById('step-Processing').classList.add('active');
+                bar.style.width = '33%';
+            } else if (state === 'Shipped') {
+                document.getElementById('step-Pending').classList.add('completed');
+                document.getElementById('step-Processing').classList.add('completed');
+                document.getElementById('step-Shipped').classList.add('active');
+                bar.style.width = '66%';
+            } else if (state === 'Delivered') {
+                document.getElementById('step-Pending').classList.add('completed');
+                document.getElementById('step-Processing').classList.add('completed');
+                document.getElementById('step-Shipped').classList.add('completed');
+                document.getElementById('step-Delivered').classList.add('completed');
+                bar.style.width = '100%';
+            }
+        }
+
+        // ENTERPRISE HIGH FREQUENCY REALTIME CHANNEL DISCUSSION STREAM ENGINE
+        function initializeRealtimeChatStream() {
+            // Initial payload pull from historical logs repository
+            pullForumHistoryLogs();
+
+            // Establish full bidirectional socket event subscription channels across Supabase framework
+            window.supabase.channel('public:community_messages')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_messages' }, () => {
+                    pullForumHistoryLogs();
+                })
+                .subscribe();
+        }
+
+        async function pullForumHistoryLogs() {
+            const { data } = await window.supabase.from('community_messages').select('*').order('created_at', { ascending: true }).limit(80);
+            if(data) {
+                const stream = document.getElementById('chat-messages-container');
+                stream.innerHTML = "";
+                data.forEach(m => {
+                    const av = m.avatar_url ? m.avatar_url : "https://via.placeholder.com/38";
+                    const safeAuthor = m.user_name ? m.user_name : "Anonymous Client";
+                    
+                    // ANTI-SPAM SAFE FILTER APPLIED BEFORE RENDERS
+                    const filteredText = contentSpamFilterGuard(m.message);
+
+                    stream.innerHTML += `
+                        <div class="chat-bubble">
+                            <img src="${av}" class="chat-avatar" alt="Avatar">
+                            <div class="chat-payload-box">
+                                <div class="chat-author">${safeAuthor} <span class="chat-timestamp">${new Date(m.created_at).toLocaleTimeString()}</span></div>
+                                <div class="chat-text">${filteredText}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                stream.scrollTop = stream.scrollHeight;
+            }
+        }
+
+        // SYSTEM CONTENT FILTER GUARD & MODERATION SHIELD
+        function contentSpamFilterGuard(rawText) {
+            const blacklistedTerms = [/badword1/gi, /scam/gi, /spamlink/gi, /fucking/gi];
+            let clean = rawText;
+            blacklistedTerms.forEach(pattern => {
+                clean = clean.replace(pattern, " [Verified Safe Content Phrase Restructured] ");
+            });
+            return clean;
+        }
+
+        // DISCUSSION FORUM SUBMISSIONS
+        document.getElementById('chat-entry-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-message-input');
+            const messagePayload = input.value.trim();
+            if(!messagePayload) return;
+
+            const nameSignature = localProfileRecord ? localProfileRecord.full_name : sessionUser.email;
+            const avatarSignature = localProfileRecord ? localProfileRecord.avatar_url : null;
+
+            const entry = {
+                user_id: sessionUser.id,
+                user_name: nameSignature,
+                avatar_url: avatarSignature,
+                message: messagePayload
+            };
+
+            const { error } = await window.supabase.from('community_messages').insert([entry]);
+            if(!error) {
+                input.value = "";
+            } else {
+                alert("Community Broadcast disruption: " + error.message);
+            }
+        });
+
+        function showToast(msg) {
+            const t = document.getElementById("global-toast");
+            t.innerText = msg; t.classList.add("show");
+            setTimeout(() => t.classList.remove("show"), 3000);
+        }
+    </script>
+</body>
+</html>
